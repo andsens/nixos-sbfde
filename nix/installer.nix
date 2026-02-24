@@ -16,6 +16,7 @@
   nix,
   systemd,
   dosfstools,
+  mkpasswd,
   e2fsprogs,
   nixos-install,
   gnugrep,
@@ -67,6 +68,7 @@ stdenv.mkDerivation rec {
         nix
         systemd
         dosfstools
+        mkpasswd
         e2fsprogs
         nixos-install
         gnugrep
