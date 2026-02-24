@@ -207,7 +207,7 @@ get_hostname() {
   while IFS= read -r -d $'\n' configname; do
     dialog_args+=("$configname" "$configname")
   done <<<"$confignames"
-  dialog --stdout --menu "Select which host profile should be used for installing NixOS" 15 80 10 "${dialog_args[@]}"
+  dialog --stdout --menu "Select the NixOS configuration you would like to install" 15 80 10 "${dialog_args[@]}"
 }
 
 get_bootsize() {
