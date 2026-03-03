@@ -29,8 +29,10 @@
         systems = import systems;
         flake.nixosModules = {
           installer = args: { imports = [ (importApply ./nix/modules/installer.nix mkFlakeArgs) ]; };
-          full-disk-encryption = args: { imports = [ ./nix/modules/full-disk-encryption.nix ]; };
-          secureboot = args: { imports = [ ./nix/modules/secureboot.nix ]; };
+          full-disk-encryption = args: {
+            imports = [ (importApply ./nix/modules/full-disk-encryption.nix mkFlakeArgs) ];
+          };
+          secureboot = args: { imports = [ (importApply ./nix/modules/secureboot.nix mkFlakeArgs) ]; };
         };
         perSystem =
           { pkgs, ... }:
