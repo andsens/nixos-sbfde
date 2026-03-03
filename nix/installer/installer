@@ -102,7 +102,7 @@ do declare -p "$p$varname";done;done;}
   [[ $rootlabel = /dev/disk/by-label/* ]] || fatal "The configuration for \"%s\" does not have full disk encryption enabled, unable to continue" "$hostname"
   rootlabel=${rootlabel#"/dev/disk/by-label/"}
   rootformat=$(get_config "$hostname" 'fileSystems."/".fsType')
-  recoverykeypath=$(get_config "$hostname" 'install-nixos.fde.recoveryKeyPath')
+  recoverykeypath=$(get_config "$hostname" 'sbfde.full-disk-encryption.recoveryKeyPath')
   if username_pwdest=$(get_config "$hostname" users.users | \
     jq -re '[.[] | select(.hashedPasswordFile != null and .enable)] | first | (.name, .hashedPasswordFile)'); then
     pwdest=${username_pwdest#*\n}
