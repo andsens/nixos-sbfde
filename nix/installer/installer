@@ -243,6 +243,7 @@ get_secret() {
   [[ ! -e $save_path ]] || prev_pass=$(cat "$save_path")
   while true; do
     password=$(dialog --stdout --insecure --passwordbox "$message" 7 45 "$prev_pass")
+    [[ $password = "$prev_pass" ]] || prev_pass=""
     if [[ -n $prev_pass && $password = "$prev_pass" ]]; then
       break
     elif [[ -z $password ]]; then
