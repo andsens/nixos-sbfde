@@ -25,6 +25,7 @@ in
       lanzaboote = {
         enable = true;
         pkiBundle = lib.mkDefault "/var/lib/sbctl";
+        autoGenerateKeys.enable = lib.mkDefault true;
       };
       loader = {
         grub.enable = false;
