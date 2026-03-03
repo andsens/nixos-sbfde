@@ -104,15 +104,12 @@ done;eval $p'__abort_msg=${var___abort_msg:-false};'$p'__auto_reboot=${var___a'\
   rootlabel=${rootlabel#"/dev/disk/by-label/"}
   rootformat=$(get_config "$hostname" 'fileSystems."/".fsType')
   recoverykeypath=$(get_config "$hostname" 'sbfde.full-disk-encryption.recoveryKeyPath')
+  enrollemptykey=$(get_config "$hostname" 'sbfde.full-disk-encryption.enrollEmptyKey')
   if username_pwdest=$(get_config "$hostname" users.users | \
     jq -re '[.[] | select(.hashedPasswordFile != null and .enable)] | first | (.name, .hashedPasswordFile)'); then
     pwdest=${username_pwdest#*$'\n'}
     password=$(get_secret $INSTALLTMP/user_password "Enter a password for \"${username_pwdest%$'\n'*}\"")
   fi
-
-  # Setup a keyfile for the empty password. Used during first boot.
-  mkdir -p "$(dirname $INSTALLTMP/empty.key)"
-  (umask 0066; touch $INSTALLTMP/empty.key)
 
   # Prompt, then prepare enrollment of a fallback FDE password
   (umask 0066; touch $INSTALLTMP/fallback.key)
@@ -133,7 +130,7 @@ done;eval $p'__abort_msg=${var___abort_msg:-false};'$p'__auto_reboot=${var___a'\
       envsubst "\${BOOTSIZE} \${ROOTLABEL} \${ROOTFORMAT}" <"$file" >$INSTALLTMP/repart.d/"$(basename "$file")"
   done
   systemd-repart --dry-run=no \
-    --key-file $INSTALLTMP/empty.key \
+    --key-file $INSTALLTMP/fallback.key \
     --definitions $INSTALLTMP/repart.d "$disk"
   # When systemd-repart returns the device nodes for the partitions might not exist yet.
   # Give udev a second or two.
@@ -146,7 +143,7 @@ done;eval $p'__abort_msg=${var___abort_msg:-false};'$p'__auto_reboot=${var___a'\
 
   # Attach the encrypted disk using the empty password
   info "Attaching encrypted disk"
-  systemd-cryptsetup attach nixos "$root_devpath" $INSTALLTMP/empty.key
+  systemd-cryptsetup attach nixos "$root_devpath" $INSTALLTMP/fallback.key
 
   info "Mounting root & boot"
   mount /dev/mapper/nixos /mnt
@@ -155,14 +152,21 @@ done;eval $p'__abort_msg=${var___abort_msg:-false};'$p'__auto_reboot=${var___a'\
 
   # Enroll a recovery key so the system can update e.g. the TPM2 key without having to prompt for the fallback password
   info "Enrolling LUKS recovery key"
-  key=$(systemd-cryptenroll --unlock-key-file=$INSTALLTMP/empty.key --recovery "$root_devpath")
-  # We don't just redirect the output from above
+  key=$(systemd-cryptenroll --unlock-key-file=$INSTALLTMP/fallback.key --recovery "$root_devpath")
+  # We can't just redirect the output from above
   # The recovery key is output with a trailing newline that is not part of the key
   mkdir -p "/mnt$(dirname "$recoverykeypath")"
-  (umask 0066; printf "%s" "$key" >/mnt"$recoverykeypath")
+  (umask 0066; printf "%s" "$key" >"/mnt$recoverykeypath")
 
   info "Enrolling LUKS fallback password"
-  key=$(cryptsetup luksAddKey --key-file=$INSTALLTMP/empty.key --new-keyfile $INSTALLTMP/fallback.key "$root_devpath")
+  cryptsetup luksAddKey --key-file=$INSTALLTMP/fallback.key --new-keyfile $INSTALLTMP/fallback.key "$root_devpath"
+
+  if $enrollemptykey; then
+    info "Enrolling LUKS empty key"
+    mkdir -p "$(dirname $INSTALLTMP/empty.key)"
+    (umask 0066; touch $INSTALLTMP/empty.key)
+    systemd-cryptenroll --unlock-key-file="/mnt$recoverykeypath" --new-keyfile $INSTALLTMP/empty.key
+  fi
 
   info "Installing NixOS"
   nixos-install --verbose --no-root-password --root /mnt --flake "$REPOURL#$hostname"

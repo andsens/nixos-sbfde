@@ -21,6 +21,7 @@ in
       type = lib.types.str;
       default = "0+2+7+15:sha256=0000000000000000000000000000000000000000000000000000000000000000";
     };
+    enrollEmptyKey = lib.mkEnableOption "enrollment of an empty encryption key (eases setup procedure, will be removed after enrollment of the SecureBoot LUKS key)";
   };
   config = lib.mkIf cfg.enable {
     assertions = [
@@ -65,7 +66,7 @@ in
         '';
         wantedBy = [ "default.target" ];
       };
-      cryptenroll-wipe-empty = {
+      cryptenroll-wipe-empty = lib.mkIf cfg.enrollEmptyKey {
         restartIfChanged = false;
         stopIfChanged = false;
         description = "Remove the empty password that can unlock the root disk";
