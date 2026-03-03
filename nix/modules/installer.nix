@@ -29,11 +29,11 @@ in
     package = lib.mkPackageOption self.packages.${pkgs.stdenv.hostPlatform.system} "installer" {
       extraDescription = "The installer package to use";
     };
-    self-update-url = lib.mkOption {
-      description = "URL to the installer package (\${config.sbfde.package}) so it can run the newest version, null to disable";
+    update-path = lib.mkOption {
+      description = "Config path to the installer package so it can run the newest version, null to disable";
       type = lib.types.nullOr lib.types.str;
-      default = "${cfg.repo.url}#nixosConfigurations.${config.networking.hostName}.config.sbfde.package";
-      defaultText = lib.literalExpression "\${repo.url}#nixosConfigurations.$HOSTNAME.config.sbfde.package";
+      default = "${cfg.repo.url}#nixosConfigurations.${config.networking.hostName}.config.sbfde.installer.package";
+      defaultText = lib.literalExpression "\${repo.url}#nixosConfigurations.$HOSTNAME.config.sbfde.installer.package";
     };
     iso-image = lib.mkOption {
       description = ''The installer ISO derivation'';
@@ -92,10 +92,12 @@ in
             "--abort-msg"
             "--auto-reboot"
           ]
-          ++ lib.optional (cfg.self-update-url != null) "--update=${cfg.self-update-url}";
+          ++ lib.optional (cfg.update-path != null) "--update";
         in
         ''
-          export REPOURL=${cfg.repo.url}
+          export REPOURL=${cfg.repo.url}${
+            lib.optionalString (cfg.update-path != null) "\nexport UPDATEPATH=${cfg.update-path}"
+          }
           if [[ $USER = nixos && ! -e .installer-launched ]]; then
             touch .installer-launched
             sudo install-nixos ${lib.escapeShellArgs args}
