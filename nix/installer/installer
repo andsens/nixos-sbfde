@@ -58,6 +58,7 @@ do declare -p "$p$varname";done;done;}
     (umount $INSTALLTMP/flake-src 2>&1 || true) | pipe_debug
     mkdir -p $INSTALLTMP/flake-src
     if mount -t 9p -o trans=virtio -o version=9p2000.L pwd $INSTALLTMP/flake-src 2>&1 | pipe_debug; then
+      info "Mounted host system flake source, disable this with '--no-mount'"
       REPOURL=$INSTALLTMP/flake-src
     fi
   elif [[ $__repourl != \$REPOURL ]]; then
@@ -92,7 +93,7 @@ do declare -p "$p$varname";done;done;}
   # Make sure we can enroll the secure boot keys
   # shellcheck disable=SC2154
   $__no_sb_check || sbctl status --json | jq -e .setup_mode >/dev/null 2>&1 || \
-    fatal "Your system is not in Setup Mode! Reset secure boot keys so they can be enrolled."
+    fatal "Your system is not in Setup Mode! Reset secure boot keys so they can be enrolled. You can disable this check with '--no-sb-check'"
 
   local disk hostname bootsize username_pwdest pwdest password
   disk=$(get_installdev)
