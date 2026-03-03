@@ -14,7 +14,7 @@ Usage:
 Options:
   --abort-msg    Show an abort message for 5 secs before launching
   --auto-reboot  Automatically reboot the machine after a successful install
-  --update       \`nix run\` \$UPDATEPATH instead of installing
+  --update       \`nix run\` \$UPDATEURL instead of installing
   --no-sb-check  Don't check if the system is in Setup Mode
   --no-mount     Don't mount the host system flake source if available
   --repourl      Set the installation repository URL [default: \$REPOURL]
@@ -23,7 +23,7 @@ Options:
 # shellcheck disable=2016,2086,2329,1090,1091,2034
 docopt() { local v='2.0.3'; source "${DOCOPT_LIB_SH:?}/docopt-lib.sh" "$v" || {
 ret=$?;printf -- "exit %d\n" "$ret";exit "$ret";};set -e
-trimmed_doc=${DOC:0:504};usage=${DOC:53:32};digest=f53f8;options=(' --abort-ms'\
+trimmed_doc=${DOC:0:503};usage=${DOC:53:32};digest=454e8;options=(' --abort-ms'\
 'g 0' ' --auto-reboot 0' ' --update 0' ' --no-sb-check 0' ' --no-mount 0' ' --'\
 'repourl 0');node_0(){ switch __abort_msg 0;};node_1(){ switch __auto_reboot 1;}
 node_2(){ switch __update 2;};node_3(){ switch __no_sb_check 3;};node_4(){
@@ -45,7 +45,7 @@ do declare -p "$p$varname";done;done;}
   mkdir -p /tmp/install-nixos
 
   # shellcheck disable=SC2064
-  trap "error \"Installation aborted. You can restart the installer with 'sudo install-nixos'.\"" EXIT
+  trap "error \"Installation aborted. You can restart the installer with 'sudo install-nixos --update'.\"" EXIT
 
   [[ $(id -u) = 0 ]] || fatal "Must run as root"
 
@@ -68,13 +68,13 @@ do declare -p "$p$varname";done;done;}
   # shellcheck disable=SC2154
   if $__update; then
     info "Self updating... building and running new installer"
-    [[ -n $UPDATEPATH ]] || fatal "Unable to self-update, \$UPDATEPATH is not set"
-    local updatepath=$UPDATEPATH
-    unset UPDATEPATH
+    [[ -n $UPDATEURL ]] || fatal "Unable to self-update, \$UPDATEURL is not set"
+    local updateurl=$UPDATEURL
+    unset UPDATEURL
     for e; do [[ $e = --update || $e = --abort-msg ]] || rerun_args+=("$e"); done
     trap "" EXIT
     info "If this fails, you can restart the installer without updating by running 'sudo install-nixos'"
-    exec nix run "$updatepath" -- "${rerun_args[@]}"
+    exec nix run --tarball-ttl 0 "$updateurl" -- "${rerun_args[@]}"
   fi
 
   # Instead of using traps, we clean up before running an install

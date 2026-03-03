@@ -29,8 +29,8 @@ in
     package = lib.mkPackageOption self.packages.${pkgs.stdenv.hostPlatform.system} "installer" {
       extraDescription = "The installer package to use";
     };
-    update-path = lib.mkOption {
-      description = "Config path to the installer package so it can run the newest version, null to disable";
+    update-url = lib.mkOption {
+      description = "Repourl & path to the installer package so it can run the newest version, null to disable";
       type = lib.types.nullOr lib.types.str;
       default = "${cfg.repo.url}#nixosConfigurations.${config.networking.hostName}.config.sbfde.installer.package";
       defaultText = lib.literalExpression "\${repo.url}#nixosConfigurations.$HOSTNAME.config.sbfde.installer.package";
@@ -88,7 +88,7 @@ in
     security.sudo.extraConfig = ''
       # Keep install-nixos env vars for root and %wheel.
       Defaults:root,%wheel env_keep+=REPOURL
-      Defaults:root,%wheel env_keep+=UPDATEPATH
+      Defaults:root,%wheel env_keep+=UPDATEURL
     '';
     environment.interactiveShellInit =
       if (cfg.repo.url != null) then
@@ -97,11 +97,11 @@ in
             "--abort-msg"
             "--auto-reboot"
           ]
-          ++ lib.optional (cfg.update-path != null) "--update";
+          ++ lib.optional (cfg.update-url != null) "--update";
         in
         ''
           export REPOURL=${cfg.repo.url}${
-            lib.optionalString (cfg.update-path != null) "\nexport UPDATEPATH=${cfg.update-path}"
+            lib.optionalString (cfg.update-url != null) "\nexport UPDATEURL=${cfg.update-url}"
           }
           if [[ $USER = nixos && ! -e .installer-launched ]]; then
             touch .installer-launched
