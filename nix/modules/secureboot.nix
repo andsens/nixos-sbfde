@@ -26,7 +26,10 @@ in
         enable = true;
         pkiBundle = lib.mkDefault "/var/lib/sbctl";
         autoGenerateKeys.enable = lib.mkDefault true;
-        autoEnrollKeys.enable = true;
+        autoEnrollKeys = {
+          enable = true;
+          autoReboot = true;
+        };
       };
       loader = {
         grub.enable = false;
