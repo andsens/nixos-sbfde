@@ -284,8 +284,13 @@ get_secret() {
 }
 
 get_config() {
-  local hostname=$1 configpath=$2 jqscript=${3:-'.'}
-  nix eval --json "$REPOURL#nixosConfigurations.\"$hostname\".config.$configpath" | jq -re "$jqscript"
+  local hostname=$1 configpath=$2 jqscript=${3:-'.'} value
+  if ! value=$(nix eval --json "$REPOURL#nixosConfigurations.\"$hostname\".config.$configpath"); then
+    fatal "Unable to retrieve configpath %s for host %s" "$configpath" "$hostname"
+  fi
+  if ! jq -re "$jqscript" <<<"$value"; then
+    fatal "Unable to run jq script '%s' on configpath %s with value '%s'" "$jqscript" "$configpath" "$value"
+  fi
 }
 
 timeout_msg() {
