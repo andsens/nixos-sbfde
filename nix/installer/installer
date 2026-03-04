@@ -99,18 +99,19 @@ done;eval $p'__abort_msg=${var___abort_msg:-false};'$p'__auto_reboot=${var___a'\
   disk=$(get_installdev)
   hostname=$(get_hostname)
   bootsize=$(get_bootsize)
-  encrootlabel=$(get_config "$hostname" 'fileSystems."/".encrypted.blkDev')
+  encrootlabel=$(get_config "$hostname" 'fileSystems."/".encrypted.blkDev' | jq -re)
   [[ $encrootlabel = /dev/disk/by-label/* ]] || fatal "The configuration for \"%s\" does not have full disk encryption enabled, unable to continue" "$hostname"
   encrootlabel=${encrootlabel#"/dev/disk/by-label/"}
-  rootformat=$(get_config "$hostname" 'fileSystems."/".fsType')
-  rootmountopts=$(get_config "$hostname" "fileSystems."/".options" '. | join(",")')
-  recoverykeypath=$(get_config "$hostname" 'sbfde.full-disk-encryption.recoveryKeyPath')
-  enrollemptykey=$(get_config "$hostname" 'sbfde.full-disk-encryption.enrollEmptyKey')
-  enrollfallbackpassword=$(get_config "$hostname" 'sbfde.full-disk-encryption.enrollFallbackPassword')
-  rootlabel=$(get_config "$hostname" 'fileSystems."/".encrypted.label')
-  allowdiscards=$(get_config "$hostname" "boot.initrd.luks.devices.$rootlabel.allowDiscards")
+  rootformat=$(get_config "$hostname" 'fileSystems."/".fsType' | jq -re)
+  rootmountopts=$(get_config "$hostname" 'fileSystems."/".options' | jq -re '. | join(",")')
+  recoverykeypath=$(get_config "$hostname" 'sbfde.full-disk-encryption.recoveryKeyPath' | jq -re)
+  enrollemptykey=$(get_config "$hostname" 'sbfde.full-disk-encryption.enrollEmptyKey' | jq -r)
+  enrollfallbackpassword=$(get_config "$hostname" 'sbfde.full-disk-encryption.enrollFallbackPassword' | jq -r)
+  rootlabel=$(get_config "$hostname" 'fileSystems."/".encrypted.label' | jq -re)
+  allowdiscards=$(get_config "$hostname" "boot.initrd.luks.devices.$rootlabel.allowDiscards" | jq -r)
 
-  if username_pwdest=$(get_config "$hostname" users.users '[.[] | select(.hashedPasswordFile != null and .enable)] | first | (.name, .hashedPasswordFile)'); then
+  if username_pwdest=$(get_config "$hostname" users.users | \
+    jq -re '[.[] | select(.hashedPasswordFile != null and .enable)] | first | (.name, .hashedPasswordFile)'); then
     pwdest=${username_pwdest#*$'\n'}
     password=$(get_secret $INSTALLTMP/user_password "Enter a password for \"${username_pwdest%$'\n'*}\"")
   fi
@@ -284,13 +285,9 @@ get_secret() {
 }
 
 get_config() {
-  local hostname=$1 configpath=$2 jqscript=${3:-'.'} value
-  if ! value=$(nix eval --json "$REPOURL#nixosConfigurations.\"$hostname\".config.$configpath"); then
+  local hostname=$1 configpath=$2
+  nix eval --json "$REPOURL#nixosConfigurations.\"$hostname\".config.$configpath" || \
     fatal "Unable to retrieve configpath %s for host %s" "$configpath" "$hostname"
-  fi
-  if ! jq -re "$jqscript" <<<"$value"; then
-    fatal "Unable to run jq script '%s' on configpath %s with value '%s'" "$jqscript" "$configpath" "$value"
-  fi
 }
 
 timeout_msg() {
