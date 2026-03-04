@@ -67,6 +67,19 @@ done;eval $p'__abort_msg=${var___abort_msg:-false};'$p'__auto_reboot=${var___a'\
     docopt_exit "No --repourl specified"
   fi
 
+  if ! curl -skf --connect-timeout 1 https://cache.nixos.org >/dev/null; then
+    printf "Waiting for an internet connection...\n" >&2
+    local timeout=10
+    while true; do
+      sleep 1
+      if curl -skf --connect-timeout 1 https://cache.nixos.org >/dev/null; then
+        break
+      elif (( --timeout == 0 )); then
+        warning "Timed out waiting for cache.nixos.org to respond."
+      fi
+    done
+  fi
+
   # shellcheck disable=SC2154
   if $__update; then
     info "Self updating... building and running new installer"
