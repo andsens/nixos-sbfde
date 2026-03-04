@@ -22,6 +22,7 @@ in
       default = "0+2+7+15:sha256=0000000000000000000000000000000000000000000000000000000000000000";
     };
     enrollEmptyKey = lib.mkEnableOption "enrollment of an empty encryption key (eases setup procedure, will be removed after enrollment of the SecureBoot LUKS key)";
+    enrollFallbackPassword = lib.mkEnableOption "enrollment of a fallback password";
   };
   config = lib.mkIf cfg.enable {
     assertions = [

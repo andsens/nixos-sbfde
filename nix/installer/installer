@@ -87,7 +87,7 @@ done;eval $p'__abort_msg=${var___abort_msg:-false};'$p'__auto_reboot=${var___a'\
     rm -rf /mnt/etc/nixos
     umount /mnt
   fi
-  [[ ! -b /dev/mapper/nixos ]] || systemd-cryptsetup detach nixos
+  [[ ! -b /dev/mapper/nixos ]] || cryptsetup close nixos
 
 # boot.lanzaboote.enable
   # Make sure we can enroll the secure boot keys
@@ -103,17 +103,24 @@ done;eval $p'__abort_msg=${var___abort_msg:-false};'$p'__auto_reboot=${var___a'\
   [[ $rootlabel = /dev/disk/by-label/* ]] || fatal "The configuration for \"%s\" does not have full disk encryption enabled, unable to continue" "$hostname"
   rootlabel=${rootlabel#"/dev/disk/by-label/"}
   rootformat=$(get_config "$hostname" 'fileSystems."/".fsType')
+  rootmountopts=$(get_config "$hostname" "fileSystems."/".options" '. | join(",")')
   recoverykeypath=$(get_config "$hostname" 'sbfde.full-disk-encryption.recoveryKeyPath')
   enrollemptykey=$(get_config "$hostname" 'sbfde.full-disk-encryption.enrollEmptyKey')
-  if username_pwdest=$(get_config "$hostname" users.users | \
-    jq -re '[.[] | select(.hashedPasswordFile != null and .enable)] | first | (.name, .hashedPasswordFile)'); then
+  enrollfallbackpassword=$(get_config "$hostname" 'sbfde.full-disk-encryption.enrollFallbackPassword')
+  allowdiscards=$(get_config "$hostname" "boot.initrd.luks.devices.$rootlabel.allowDiscards")
+
+  if username_pwdest=$(get_config "$hostname" users.users '[.[] | select(.hashedPasswordFile != null and .enable)] | first | (.name, .hashedPasswordFile)'); then
     pwdest=${username_pwdest#*$'\n'}
     password=$(get_secret $INSTALLTMP/user_password "Enter a password for \"${username_pwdest%$'\n'*}\"")
   fi
 
-  # Prompt, then prepare enrollment of a fallback FDE password
-  (umask 0066; touch $INSTALLTMP/fallback.key)
-  get_secret $INSTALLTMP/fallback.key "Enter a disk encryption fallback password"
+  if $enrollfallbackpassword; then
+    # Prompt, then prepare enrollment of a fallback FDE password
+    (umask 0066; touch $INSTALLTMP/fallback.key)
+    get_secret $INSTALLTMP/fallback.key "Enter a disk encryption fallback password"
+  else
+    rm -f $INSTALLTMP/fallback.key
+  fi
 
   clear
 
@@ -129,9 +136,12 @@ done;eval $p'__abort_msg=${var___abort_msg:-false};'$p'__auto_reboot=${var___a'\
     ROOTFORMAT=$rootformat \
       envsubst "\${BOOTSIZE} \${ROOTLABEL} \${ROOTFORMAT}" <"$file" >$INSTALLTMP/repart.d/"$(basename "$file")"
   done
-  systemd-repart --dry-run=no \
-    --key-file $INSTALLTMP/fallback.key \
-    --definitions $INSTALLTMP/repart.d "$disk"
+
+  SYSTEMD_REPART_MKFS_OPTIONS_EXT4="-E nodiscard" \
+    systemd-repart --dry-run=no \
+      --key-file $INSTALLTMP/fallback.key \
+      --definitions $INSTALLTMP/repart.d "$disk"
+
   # When systemd-repart returns the device nodes for the partitions might not exist yet.
   # Give udev a second or two.
   sleep 2
@@ -142,30 +152,37 @@ done;eval $p'__abort_msg=${var___abort_msg:-false};'$p'__auto_reboot=${var___a'\
   root_devpath=$(lsblk -JO "$disk" | jq -r '.blockdevices[].children[] | select(.partn==2) | .path')
 
   # Attach the encrypted disk using the empty password
+  mkdir -p "$(dirname $INSTALLTMP/empty.key)"
+  (umask 0066; touch $INSTALLTMP/empty.key)
   info "Attaching encrypted disk"
-  systemd-cryptsetup attach nixos "$root_devpath" $INSTALLTMP/fallback.key
+  if $allowdiscards; then
+    cryptsetup open --allow-discards --key-file=$INSTALLTMP/empty.key "$root_devpath" nixos
+  else
+    cryptsetup open --key-file=$INSTALLTMP/empty.key "$root_devpath" nixos
+  fi
 
   info "Mounting root & boot"
-  mount /dev/mapper/nixos /mnt
+  mount -o "$rootmountopts" /dev/mapper/nixos /mnt
   (umask 0066; mkdir /mnt/boot)
   mount "$esp_devpath" /mnt/boot
 
   # Enroll a recovery key so the system can update e.g. the TPM2 key without having to prompt for the fallback password
   info "Enrolling LUKS recovery key"
-  key=$(systemd-cryptenroll --unlock-key-file=$INSTALLTMP/fallback.key --recovery "$root_devpath")
+  local recoverykey
+  recoverykey=$(systemd-cryptenroll --unlock-key-file=$INSTALLTMP/empty.key --recovery "$root_devpath")
   # We can't just redirect the output from above
   # The recovery key is output with a trailing newline that is not part of the key
   mkdir -p "/mnt$(dirname "$recoverykeypath")"
-  (umask 0066; printf "%s" "$key" >"/mnt$recoverykeypath")
+  (umask 0066; printf "%s" "$recoverykey" >"/mnt$recoverykeypath")
 
-  info "Enrolling LUKS fallback password"
-  cryptsetup luksAddKey --key-file=$INSTALLTMP/fallback.key --new-keyfile $INSTALLTMP/fallback.key "$root_devpath"
+  if $enrollfallbackpassword; then
+    info "Enrolling LUKS fallback password"
+    cryptsetup luksAddKey --key-file=$INSTALLTMP/empty.key --new-keyfile $INSTALLTMP/fallback.key "$root_devpath"
+  fi
 
-  if $enrollemptykey; then
-    info "Enrolling LUKS empty key"
-    mkdir -p "$(dirname $INSTALLTMP/empty.key)"
-    (umask 0066; touch $INSTALLTMP/empty.key)
-    systemd-cryptenroll --unlock-key-file="/mnt$recoverykeypath" --new-keyfile $INSTALLTMP/empty.key
+  if ! $enrollemptykey; then
+    info "Unenrolling LUKS empty key"
+    systemd-cryptenroll --unlock-key-file="/mnt$recoverykeypath" --wipe-slot=empty
   fi
 
   info "Installing NixOS"
@@ -190,6 +207,9 @@ done;eval $p'__abort_msg=${var___abort_msg:-false};'$p'__auto_reboot=${var___a'\
   info "Unmounting root & boot"
   umount /mnt/boot
   umount /mnt
+
+  info "Detaching encrypted disk"
+  cryptsetup close nixos
 
   trap "" EXIT
   # shellcheck disable=SC2154
@@ -263,8 +283,8 @@ get_secret() {
 }
 
 get_config() {
-  local hostname=$1 configpath=$2
-  nix eval --json "$REPOURL#nixosConfigurations.\"$hostname\".config.$configpath" | jq -r .
+  local hostname=$1 configpath=$2 jqscript=${3:-'.'}
+  nix eval --json "$REPOURL#nixosConfigurations.\"$hostname\".config.$configpath" | jq -re "$jqscript"
 }
 
 timeout_msg() {
