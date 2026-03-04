@@ -99,14 +99,15 @@ done;eval $p'__abort_msg=${var___abort_msg:-false};'$p'__auto_reboot=${var___a'\
   disk=$(get_installdev)
   hostname=$(get_hostname)
   bootsize=$(get_bootsize)
-  rootlabel=$(get_config "$hostname" 'fileSystems."/".encrypted.blkDev')
-  [[ $rootlabel = /dev/disk/by-label/* ]] || fatal "The configuration for \"%s\" does not have full disk encryption enabled, unable to continue" "$hostname"
-  rootlabel=${rootlabel#"/dev/disk/by-label/"}
+  encrootlabel=$(get_config "$hostname" 'fileSystems."/".encrypted.blkDev')
+  [[ $encrootlabel = /dev/disk/by-label/* ]] || fatal "The configuration for \"%s\" does not have full disk encryption enabled, unable to continue" "$hostname"
+  encrootlabel=${encrootlabel#"/dev/disk/by-label/"}
   rootformat=$(get_config "$hostname" 'fileSystems."/".fsType')
   rootmountopts=$(get_config "$hostname" "fileSystems."/".options" '. | join(",")')
   recoverykeypath=$(get_config "$hostname" 'sbfde.full-disk-encryption.recoveryKeyPath')
   enrollemptykey=$(get_config "$hostname" 'sbfde.full-disk-encryption.enrollEmptyKey')
   enrollfallbackpassword=$(get_config "$hostname" 'sbfde.full-disk-encryption.enrollFallbackPassword')
+  rootlabel=$(get_config "$hostname" 'fileSystems."/".encrypted.label')
   allowdiscards=$(get_config "$hostname" "boot.initrd.luks.devices.$rootlabel.allowDiscards")
 
   if username_pwdest=$(get_config "$hostname" users.users '[.[] | select(.hashedPasswordFile != null and .enable)] | first | (.name, .hashedPasswordFile)'); then
@@ -132,7 +133,7 @@ done;eval $p'__abort_msg=${var___abort_msg:-false};'$p'__auto_reboot=${var___a'\
   for file in "${REPART_D:?}"/*; do
     # shellcheck disable=SC2094
     BOOTSIZE=$bootsize \
-    ROOTLABEL=$rootlabel \
+    ROOTLABEL=$encrootlabel \
     ROOTFORMAT=$rootformat \
       envsubst "\${BOOTSIZE} \${ROOTLABEL} \${ROOTFORMAT}" <"$file" >$INSTALLTMP/repart.d/"$(basename "$file")"
   done
