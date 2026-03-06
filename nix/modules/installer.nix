@@ -96,8 +96,7 @@ in
           args = [
             "--abort-msg"
             "--auto-reboot"
-          ]
-          ++ lib.optional (cfg.update-url != null) "--update";
+          ];
         in
         ''
           export REPOURL=${cfg.repo.url}${
