@@ -23,6 +23,10 @@ in
     enrollFallbackPassword = lib.mkEnableOption "enrollment of a fallback password";
   };
   config = lib.mkIf (cfg.enable && config.fileSystems."/".encrypted.enable) {
+    boot.initrd.luks.devices.${config.fileSystems."/".encrypted.label}.crypttabExtraOpts = [
+      "tpm2-measure-pcr=yes" # sooooper important, otherwise the key is accessible after booting
+      "tpm2-device=auto"
+    ];
     systemd.services = {
       cryptenroll-tpm2 = lib.mkIf config.boot.lanzaboote.enable {
         restartIfChanged = true;

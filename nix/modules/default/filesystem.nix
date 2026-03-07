@@ -20,7 +20,6 @@ in
     };
   };
   config = lib.mkIf cfg.enable {
-    boot.initrd.systemd.root = "gpt-auto";
     assertions = [
       {
         assertion = builtins.hasAttr "UUID" config.systemd.repart.partitions."10-esp";
@@ -59,7 +58,7 @@ in
             ])
           );
           blkDev = lib.mkDefault "/dev/disk/by-partuuid/${config.systemd.repart.partitions."20-root".UUID}";
-          label = lib.mkForce "root"; # No choice, that's what systemd-gpt-aut-generator calls it
+          label = lib.mkDefault "root";
         };
       };
       "/boot" = {
