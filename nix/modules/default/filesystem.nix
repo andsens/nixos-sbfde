@@ -58,8 +58,8 @@ in
               false
             ])
           );
-          blkDev = lib.mkDefault "PARTUUID=${config.systemd.repart.partitions."20-root".UUID}";
-          label = lib.mkDefault "nixos";
+          blkDev = lib.mkDefault "/dev/disk/by-partuuid/${config.systemd.repart.partitions."20-root".UUID}";
+          label = lib.mkForce "root"; # No choice, that's what systemd-gpt-aut-generator calls it
         };
       };
       "/boot" = {
