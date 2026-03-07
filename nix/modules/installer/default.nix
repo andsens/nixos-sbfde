@@ -35,6 +35,22 @@ in
       default = "${cfg.repo.url}#nixosConfigurations.${config.networking.hostName}.config.sbfde.installer.package";
       defaultText = lib.literalExpression "\${repo.url}#nixosConfigurations.$HOSTNAME.config.sbfde.installer.package";
     };
+    unattended = {
+      enable = lib.mkEnableOption "unattended installation";
+      installDev = lib.mkOption {
+        description = "The devicepath to install NixOS to";
+        type = lib.types.str;
+      };
+      nixOSConfig = lib.mkOption {
+        description = "The nixOS configuration to install";
+        type = lib.types.str;
+      };
+      hashedPassword = lib.mkOption {
+        description = "Hashed password of the primary user";
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+      };
+    };
     iso-image = lib.mkOption {
       description = "The installer ISO derivation";
       type = lib.types.package;
@@ -52,6 +68,16 @@ in
       "nix-command"
       "flakes"
     ];
+    isoImage.contents = lib.optional cfg.unattended.enable {
+      source = pkgs.writeText "unattended.json" (
+        builtins.toJSON {
+          installDev = cfg.unattended.installDev;
+          nixOSConfig = cfg.unattended.nixOSConfig;
+          hashedPassword = cfg.unattended.hashedPassword;
+        }
+      );
+      target = "unattended.json";
+    };
     programs.ssh = {
       knownHostsFiles = lib.optional (cfg.known_hosts != null) (
         pkgs.writeText "known_hosts" cfg.known_hosts
@@ -96,6 +122,7 @@ in
           args = [
             "--abort-msg"
             "--auto-reboot"
+            "--unattended"
           ];
         in
         ''
