@@ -8,6 +8,11 @@
       url = "github:nix-community/lanzaboote/v1.0.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    qemu-vm = {
+      url = "github:andsens/nixos-qemu-vm";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-parts.follows = "flake-parts";
+    };
   };
   outputs =
     {
@@ -27,9 +32,10 @@
           nixosModules = {
             default = args: { imports = [ (importApply ./nix/modules/default mkFlakeArgs) ]; };
             installer = args: { imports = [ (importApply ./nix/modules/installer mkFlakeArgs) ]; };
+            vm = args: { imports = [ (importApply ./nix/modules/vm mkFlakeArgs) ]; };
           };
           nixosConfigurations = {
-            iso_x86_64 = nixpkgs.lib.nixosSystem {
+            "iso-x86_64-linux" = nixpkgs.lib.nixosSystem {
               specialArgs = { inherit inputs self; };
               modules = [
                 ./nix/configurations/iso.nix
@@ -39,7 +45,7 @@
                 }
               ];
             };
-            iso_aarch64 = nixpkgs.lib.nixosSystem {
+            "iso-aarch64-linux" = nixpkgs.lib.nixosSystem {
               specialArgs = { inherit inputs self; };
               modules = [
                 ./nix/configurations/iso.nix
@@ -49,12 +55,34 @@
                 }
               ];
             };
+            "vm-x86_64-linux" = nixpkgs.lib.nixosSystem {
+              specialArgs = { inherit inputs self; };
+              modules = [
+                ./nix/configurations/vm.nix
+                { nixpkgs.hostPlatform = "x86_64-linux"; }
+              ];
+            };
+            "vm-aarch64-linux" = nixpkgs.lib.nixosSystem {
+              specialArgs = { inherit inputs self; };
+              modules = [
+                ./nix/configurations/vm.nix
+                { nixpkgs.hostPlatform = "aarch64-linux"; }
+              ];
+            };
+
           };
         };
         perSystem =
-          { pkgs, ... }:
+          { pkgs, system, ... }:
           {
-            packages.installer = pkgs.callPackage ./nix/installer { };
+            packages = {
+              installer = pkgs.callPackage ./nix/packages/installer { };
+              installer-vm = inputs.qemu-vm.lib.mkVMRunner {
+                inherit system;
+                vmName = "installer-vm";
+                nixosConfiguration = self.nixosConfigurations."vm-${system}";
+              };
+            };
           };
       }
     );

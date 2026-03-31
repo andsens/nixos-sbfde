@@ -15,7 +15,7 @@ Add `nixos-sbfde` to your `flake.nix`:
 {
   inputs = {
     ...
-    nixos-sbfde = {
+    sbfde = {
       url = "github:andsens/nixos-sbfde";
       inputs.nixpkgs.follows = "nixpkgs";
     };
@@ -34,7 +34,7 @@ config to be included in the installation prompt:
 { inputs, ... }:
 {
   imports = [
-    inputs.nixos-sbfde.nixosModules.default
+    inputs.sbfde.nixosModules.default
  ];
   config = {
     sbfde.enable = true;
@@ -50,7 +50,7 @@ Create a `configuration.nix` for your installation USB stick:
 { inputs, modulesPath, ... }:
 {
   imports = [
-    inputs.nixos-sbfde.nixosModules.installer
+    inputs.sbfde.nixosModules.installer
     "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
     "${modulesPath}/installer/cd-dvd/iso-image.nix"
   ];
