@@ -88,7 +88,7 @@ stdenv.mkDerivation rec {
 
   meta = with lib; {
     description = "NixOS Installation Utility";
-    homepage = "https://github.com/andsens/install-nixos";
+    homepage = "https://github.com/andsens/nixos-sbfde";
     license = licenses.mit;
     platforms = platforms.linux;
     maintainers = with maintainers; [ sgo ];

@@ -22,7 +22,12 @@
       ...
     }@inputs:
     flake-parts.lib.mkFlake { inherit inputs; } (
-      { flake-parts-lib, self, ... }@mkFlakeArgs:
+      {
+        flake-parts-lib,
+        self,
+        inputs,
+        ...
+      }:
       let
         inherit (flake-parts-lib) importApply;
       in
@@ -30,9 +35,9 @@
         systems = import systems;
         flake = {
           nixosModules = {
-            default = args: { imports = [ (importApply ./nix/modules/default mkFlakeArgs) ]; };
-            installer = args: { imports = [ (importApply ./nix/modules/installer mkFlakeArgs) ]; };
-            vm = args: { imports = [ (importApply ./nix/modules/vm mkFlakeArgs) ]; };
+            default = importApply ./nix/modules/default { inherit self inputs; };
+            installer = importApply ./nix/modules/installer { inherit self inputs; };
+            vm = importApply ./nix/modules/vm { inherit self inputs; };
           };
           nixosConfigurations = {
             "iso-x86_64-linux" = nixpkgs.lib.nixosSystem {
