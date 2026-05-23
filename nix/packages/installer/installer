@@ -14,11 +14,6 @@ if [[ -e $CONFIGPATH ]]; then
   UNATTENDED=$(jq -r '.unattended.enable' $CONFIGPATH)
 fi
 
-if [[ -e /iso/deploy_key ]]; then
-  cp /iso/deploy_key /root/.ssh/deploykey
-  chmod 0600 /root/.ssh/deploykey
-fi
-
 main() {
   DOC="install-nixos - Install NixOS on the current machine
 Usage:
@@ -63,13 +58,18 @@ $p'__install_dev=${var___install_dev:-};'$p'__nixosconfig=${var___nixosconfig:'\
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"${DOCOPT_LIB_SH:?}/docopt-lib.sh"' installer`
   eval "$(docopt "$@")"
 
-  mkdir -p $INSTALLTMP
+  [[ $(id -u) = 0 ]] || fatal "Must run as root"
 
   onexit() { fatal "Installation failed. You can restart the installer with \`sudo install-nixos\`."; }
   # shellcheck disable=SC2064
   trap onexit EXIT
 
-  [[ $(id -u) = 0 ]] || fatal "Must run as root"
+  mkdir -p $INSTALLTMP
+
+  if [[ -e /iso/deploy_key ]]; then
+    cp /iso/deploy_key /root/.ssh/deploykey
+    chmod 0600 /root/.ssh/deploykey
+  fi
 
   # shellcheck disable=SC2154
   ! $__abort_msg || dialog --pause 'Launching the installer in' 8 30 5
