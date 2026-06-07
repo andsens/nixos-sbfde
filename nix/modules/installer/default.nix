@@ -129,18 +129,13 @@ in
       target = "known_hosts";
     });
     systemd.tmpfiles.settings."50-ssh" = {
-      "/root/.ssh".d = {
-        user = "root";
-        group = "root";
-        mode = "0700";
-      };
-      "/root/.ssh".f = {
+      "/root/.ssh/config".f = {
         user = "root";
         group = "root";
         mode = "0600";
         argument = ''
           UserKnownHostsFile /iso/known_hosts
-          IdentityFile %d/.ssh/deploykey
+          IdentityFile %%d/.ssh/deploykey
         '';
       };
     };
