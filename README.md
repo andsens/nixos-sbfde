@@ -106,5 +106,5 @@ Add it to your `flake.nix`:
 To build an ISO that you can put on a USB stick, run:
 
 ```
-nix build '.#nixosConfigurations.installer.config.sbfde.installer.iso-image'
+nix build '.#nixosConfigurations.installer.config.sbfde.installer.isoImage'
 ```
