@@ -81,7 +81,7 @@ $p'__install_dev=${var___install_dev:-};'$p'__nixosconfig=${var___nixosconfig:'\
     info "Mounted host system flake source, disable this with '--no-mount'"
     [[ $UPDATEURL != "$REPOURL#"* ]] || UPDATEURL="$INSTALLTMP/flake-src#${UPDATEURL#"$REPOURL#"}"
     REPOURL=$INSTALLTMP/flake-src
-  elif [[ $__repourl != \$REPOURL ]]; then
+  elif [[ -n $__repourl ]]; then
     REPOURL=$__repourl
   elif [[ -z $REPOURL ]]; then
     docopt_exit "No --repourl specified"
