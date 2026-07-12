@@ -23,8 +23,9 @@ in
   ];
   config = {
     virtualisation = {
-      fileSystems = {
-        "/".device = "/dev/disk/by-partlabel/nixos";
+      fileSystems."/" = {
+        fsType = "ext4";
+        device = "/dev/disk/by-partlabel/nixos";
       };
       installBootLoader = false;
       useNixStoreImage = false;
