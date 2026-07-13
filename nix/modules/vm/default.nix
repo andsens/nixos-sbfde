@@ -19,7 +19,7 @@ in
   };
   imports = [
     inputs.qemu-vm.nixosModules.qemuSetup
-    inputs.qemu-vm.nixosModules.qemuHardware
+    inputs.qemu-vm.nixosModules.qemuGuest
   ];
   config = {
     virtualisation = {
