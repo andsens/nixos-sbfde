@@ -26,7 +26,8 @@ in
     boot.initrd.luks.devices.${config.fileSystems."/".encrypted.label}.crypttabExtraOpts = [
       "tpm2-measure-pcr=yes" # sooooper important, otherwise the key is accessible after booting
       "tpm2-device=auto"
-    ];
+    ]
+    ++ lib.optional cfg.enrollEmptyKey "try-empty-password";
     systemd.services = {
       cryptenroll-tpm2 = lib.mkIf config.boot.lanzaboote.enable {
         restartIfChanged = true;
