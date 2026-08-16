@@ -7,6 +7,8 @@ secure boot.
 There is a menu for selecting the disk, host configuration, user password,
 disk encryption fallback password, and the boot partition size.
 
+For the full list of module options, see [docs/options.md](docs/options.md).
+
 # Setup
 
 Add `nixos-sbfde` to your `flake.nix`:
@@ -62,9 +64,9 @@ Create a `configuration.nix` for your installation USB stick:
     sbfde.installer = {
       enable = true;
       # Can be omitted
-      repo.url = "git+ssh://git@github.com/username/reponame";
+      repoUrl = "git+ssh://git@github.com/username/reponame";
       # If your repo is public you won't need this option
-      repo.deploy-key = ''
+      deployKey = ''
         -----BEGIN OPENSSH PRIVATE KEY-----
         b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
         QyNTUxOQAAACBu7idAKt8F/rwv6TnFVDKnpDFlPIwHu08umgyYHGmX5AAAAJDpO/ef6Tv3
@@ -74,7 +76,7 @@ Create a `configuration.nix` for your installation USB stick:
         -----END OPENSSH PRIVATE KEY-----
       '';
       # Use `ssh-keyscan github.com | grep -v '^#'` to generate these lines, leave out to disable strict host key checking
-      known_hosts = ''
+      knownHosts = ''
         github.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg=
         github.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+VTTvDP6mHBL9j1aNUkY4Ue1gvwnGLVlOhGeYrnZaMgRK6+PKCUXaDbC7qtbW8gIkhL7aGCsOr/C56SJMy/BCZfxd1nWzAOxSDPgVsmerOBYfNqltV9/hWCqBywINIR+5dIg6JTJ72pcEpEjcYgXkE2YEFXV1JHnsKgbLWNlhScqb2UmyRkQyytRLtL+38TGxkxCflmO+5Z8CSSNY7GidjMIZ7Q4zMjA2n1nGrlTDkzwDCsw+wqFPGQA179cnfGWOWRVruj16z6XyvxvjJwbz0wQZ75XK5tKSb7FNyeIEs4TT4jk+S4dhPeAUC5y+bDYirYgM4GC7uEnztnZyaVWQ7B381AK4Qdrwt51ZqExKbQpTUNn+EjqoTwvqNj4kqx5QUCI0ThS/YkOxJCXmPUWZbhjpCg56i+2aB6CmK2JGhn57K5mj0MNdBXA4/WnwH6XoPWJzK5Nyu2zB3nAZp+S5hpQs+p1vN1/wsjk=
         github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
@@ -107,4 +109,13 @@ To build an ISO that you can put on a USB stick, run:
 
 ```
 nix build '.#nixosConfigurations.installer.config.sbfde.installer.isoImage'
+```
+
+# Testing in a VM
+
+Rather than writing the installer ISO to a USB stick, you can boot it in a
+QEMU VM. Run:
+
+```
+nix run '.#installer-vm'
 ```

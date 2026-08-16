@@ -1,3 +1,4 @@
+{ ... }:
 {
   pkgs,
   lib,
@@ -17,6 +18,7 @@ in
       default = utils.systemdUtils.lib.definitions "repart.d" (pkgs.formats.ini {
         listsAsDuplicateKeys = true;
       }) (lib.mapAttrs (_n: v: { Partition = v; }) config.systemd.repart.partitions);
+      defaultText = "";
     };
   };
   config = lib.mkIf cfg.enable {

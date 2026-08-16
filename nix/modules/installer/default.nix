@@ -74,6 +74,7 @@ in
       type = lib.types.package;
       readOnly = true;
       default = config.system.build.isoImage;
+      defaultText = "";
     };
     configuration = lib.mkOption {
       description = "The installer configuration file. Setting this option causes all other installer configs to be ignored.";
@@ -101,6 +102,7 @@ in
           runHook postInstall
         '';
       };
+      defaultText = "";
     };
   };
   config = lib.mkIf cfg.enable {

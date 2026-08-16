@@ -1,4 +1,4 @@
-{ inputs, ... }:
+{ inputs, self, ... }:
 {
   pkgs,
   lib,
@@ -32,9 +32,11 @@ in
   };
 
   imports = [
+    inputs.lanzaboote.nixosModules.lanzaboote
+  ]
+  ++ self.lib.importsApply [
     ./filesystem.nix
     ./full-disk-encryption.nix
     ./secureboot.nix
-    inputs.lanzaboote.nixosModules.lanzaboote
   ];
 }

@@ -15,6 +15,32 @@
         "type": "github"
       }
     },
+    "docs": {
+      "inputs": {
+        "flake-parts": [
+          "flake-parts"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "systems": [
+          "systems"
+        ]
+      },
+      "locked": {
+        "lastModified": 1786899524,
+        "narHash": "sha256-BeIdacPpbmv0SmjlyKAObFv2RnvqQRjAymUrkEUEXWw=",
+        "owner": "andsens",
+        "repo": "nix-docs",
+        "rev": "27d76d2852ca002d9faf7075d49c72f2c6752aef",
+        "type": "github"
+      },
+      "original": {
+        "owner": "andsens",
+        "repo": "nix-docs",
+        "type": "github"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -160,11 +186,11 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1783965193,
-        "narHash": "sha256-0x07N2fgIC1f5gpfVZB/1cHbhdLOjmc4Pqq9lltVJcY=",
+        "lastModified": 1786898098,
+        "narHash": "sha256-9bciTTXdiEpXqBsyb+vA+T3VOjoiWHVAnFkKyUgxPJQ=",
         "owner": "andsens",
         "repo": "nixos-qemu-vm",
-        "rev": "01fa8d6cb70e19061b06c80722fb4fbe09248dae",
+        "rev": "1d53d361e7783e0df6e5472638194d6f7508ccad",
         "type": "github"
       },
       "original": {
@@ -175,6 +201,7 @@
     },
     "root": {
       "inputs": {
+        "docs": "docs",
         "flake-parts": "flake-parts",
         "lanzaboote": "lanzaboote",
         "nixpkgs": "nixpkgs",

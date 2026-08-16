@@ -15,6 +15,7 @@ in
       type = lib.types.package;
       default =
         self.nixosConfigurations."iso-${pkgs.stdenv.hostPlatform.system}".config.sbfde.installer.isoImage;
+      defaultText = "";
     };
   };
   imports = [
