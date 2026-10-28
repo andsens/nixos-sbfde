@@ -1,0 +1,32 @@
+name: Test
+
+on:
+  # ** rather than *, so pushes to branches with a slash in the name - which
+  # is every branch Dependabot opens - are tested too.
+  push:
+    branches: ['**']
+  # So the checks can be re-run by hand.
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  nix:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - name: Install Nix
+      uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
+      with:
+        extra_nix_config: experimental-features = nix-command flakes
+    - name: Check the flake
+      run: nix flake check
+    # The flake defines no checks, so flake check only evaluates
+    - name: Build the packages
+      run: |
+        # Quoted, since names like docopt.sh would otherwise be attribute paths
+        refs=$(nix eval --json .#packages.x86_64-linux --apply builtins.attrNames | jq -r '.[] | ".#packages.x86_64-linux.\"\(.)\""')
+        # shellcheck disable=SC2086 # one flake ref per word
+        [[ -z $refs ]] || nix build --print-build-logs $refs
