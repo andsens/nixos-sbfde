@@ -105,9 +105,9 @@
             };
           in
           {
-            apps.update-docs.program = inputs.docs.lib.docs.updateRepo {
+            apps.update-docs.program = inputs.docs.lib.utils.updateRepo {
               inherit pkgs;
-              paths."docs/options.md" = options-docs.optionsCommonMark;
+              paths."docs/options.md" = options-docs;
             };
             packages = {
               installer = pkgs.callPackage ./nix/packages/installer { };
@@ -116,7 +116,7 @@
                 vmName = "installer-vm";
                 nixosConfiguration = self.nixosConfigurations."vm-${system}";
               };
-              options-docs = options-docs.optionsCommonMark;
+              options-docs = options-docs;
             };
           };
       }
