@@ -67,8 +67,8 @@ in
         fsType = lib.mkDefault config.systemd.repart.partitions."10-esp".Format;
         device = lib.mkDefault "PARTUUID=${config.systemd.repart.partitions."10-esp".UUID}";
         options = [
-          "fmask=0022"
-          "dmask=0022"
+          "fmask=0077"
+          "dmask=0077"
         ];
       };
     };
