@@ -163,11 +163,11 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1793807349,
-        "narHash": "sha256-bV9B/11l5yFYky1AvKwm7BZgBtXLgns/y9cLTABusHs=",
+        "lastModified": 1794411990,
+        "narHash": "sha256-Ad9EtnJI8WBYeCAGYK5meZxuKBakKkP4wE50f5YTGvU=",
         "owner": "andsens",
         "repo": "nixos-qemu-vm",
-        "rev": "9292daafd9c1309b0a8138c4c0d4f9ef48b39974",
+        "rev": "70774ede38810869d05ac36f2e38034a9c9f22da",
         "type": "github"
       },
       "original": {
